@@ -58,7 +58,7 @@ def _get_config(params, arg_name, subfolder):
             "r",
         ) as f:
             try:
-                config_dict = yaml.load(f)
+                config_dict = yaml.safe_load(f)
             except yaml.YAMLError as exc:
                 assert False, "{}.yaml error: {}".format(config_name, exc)
         return config_dict
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(__file__), "config", "default.yaml"), "r"
     ) as f:
         try:
-            config_dict = yaml.load(f)
+            config_dict = yaml.safe_load(f)
         except yaml.YAMLError as exc:
             assert False, "default.yaml error: {}".format(exc)
 
