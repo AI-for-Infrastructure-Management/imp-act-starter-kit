@@ -1,7 +1,7 @@
 env: road_marl
 
 env_args:
-  env_type: "environments/config/environment_presets/small_environment.yaml"
+  env_type: "small_environment_numpy"
   discount_reward: 1.0
   state_obs: True
   obs_multiple: False

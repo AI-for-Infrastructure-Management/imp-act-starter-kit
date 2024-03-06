@@ -1,11 +1,10 @@
 """ Wrapper for road_env respecting the interface of PyMARL. """
-
 import numpy as np
 
+from imp_rl_challenge import get_environment
 
-# from environments.road_env import RoadEnv
 from .MultiAgentEnv import MultiAgentEnv
-from environments.config.environment_loader import EnvironmentLoader
+
 
 class PymarlMARoadEnv(MultiAgentEnv):
     """
@@ -15,7 +14,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
 
     def __init__(
         self,
-        env_type: str = "environments/config/environment_presets/small_environment.yaml",
+        env_type: str = "toy_environment_numpy",
         discount_reward: float = 1.0,
         state_obs: bool = True,
         obs_multiple: bool = False,
@@ -32,28 +31,23 @@ class PymarlMARoadEnv(MultiAgentEnv):
             seed: (int) seed for the random number generator
         """
 
-        assert (
-            isinstance(state_obs, bool)
-            and isinstance(obs_multiple, bool)
+        assert isinstance(state_obs, bool) and isinstance(
+            obs_multiple, bool
         ), "Error in env parameters"
         assert 0 <= discount_reward <= 1, "Error in discount_reward"
 
+        self.env_type = env_type
         self.discount_reward = discount_reward
         self.state_obs = state_obs
         self.obs_multiple = obs_multiple
         self._seed = seed
 
-
-        # self.config = {
-        #     "env_type": env_type,
-        #     }
-        
-        self.road_env = EnvironmentLoader(env_type).to_numpy()
+        self.road_env = get_environment(env_type)
 
         self.number_edges = []
         for edge in self.road_env.graph.es:
-                self.number_edges.append(edge["road_segments"].number_of_segments)
-        
+            self.number_edges.append(edge["road_segments"].number_of_segments)
+
         self.n_agents = sum(self.number_edges)
 
         self.episode_limit = self.road_env.max_timesteps
@@ -61,11 +55,13 @@ class PymarlMARoadEnv(MultiAgentEnv):
         self.n_actions = 3
         self.road_env.reset()
 
-        obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
-        observations = []
-        for item in obs_list:
-            observations.append( np.append(item, self.road_env._get_observation()['time_step'] / self.road_env.max_timesteps ))
-        self.observations = observations
+        # obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
+        # observations = []
+        # for item in obs_list:
+        #     observations.append( np.append(item, self.road_env._get_observation()['time_step'] / self.road_env.max_timesteps ))
+        # self.observations = observations
+
+        self.observations = self.get_obs_and_time()
 
         # self.observations = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
 
@@ -87,7 +83,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
     #             action_str = str(action)
     #         self.action_histogram["action_" + action_str] += 1
 
-    def step(self, actions): #Done
+    def step(self, actions):  # Done
         """
         Ask to run a step in the environment.
 
@@ -107,11 +103,12 @@ class PymarlMARoadEnv(MultiAgentEnv):
         actions_nested = self.get_nested_list(actions, self.number_edges)
         _, reward, done, _ = self.road_env.step(actions_nested)
 
-        obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
-        observations = []
-        for item in obs_list:
-            observations.append( np.append(item, self.road_env._get_observation()['time_step'] / self.road_env.max_timesteps ))
-        self.observations = observations
+        self.observations = self.get_obs_and_time()
+        # obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
+        # observations = []
+        # for item in obs_list:
+        #     observations.append( np.append(item, self.road_env._get_observation()['time_step'] / self.road_env.max_timesteps ))
+        # self.observations = observations
         # 'time_step'
         info = {}
         # if done:
@@ -120,15 +117,15 @@ class PymarlMARoadEnv(MultiAgentEnv):
         #     info = self.action_histogram
         return reward, done, info
 
-    def get_obs(self): #Done
+    def get_obs(self):
         """Returns all agent observations in a list."""
         return [self.get_obs_agent(i) for i in range(self.n_agents)]
 
-    def get_unit_dim(self): #Done
+    def get_unit_dim(self):
         """Returns the dimension of the unit observation used by QPLEX."""
         return len(self.all_obs_from_struct_env()) // self.n_agents
 
-    def get_obs_agent(self, agent_id: int): #Done
+    def get_obs_agent(self, agent_id: int):
         """
         Returns observation for agent_id
 
@@ -143,11 +140,11 @@ class PymarlMARoadEnv(MultiAgentEnv):
 
         return obs
 
-    def get_obs_size(self): #Done
+    def get_obs_size(self):
         """Returns the size of the observation."""
         return len(self.get_obs_agent(0))
 
-    def all_obs_from_struct_env(self): #Done
+    def all_obs_from_struct_env(self):
         """Returns all observations concatenated in a single vector."""
         # Concatenate all obs with a single time.
         idx = 0
@@ -159,9 +156,8 @@ class PymarlMARoadEnv(MultiAgentEnv):
             else:
                 obs = np.append(obs, k)
         return obs
-    
 
-    def get_nested_list(self, flat_list, pattern): #Done
+    def get_nested_list(self, flat_list, pattern):
         """Structures a flat list into a nested list following a specific size pattern."""
         nested_list = []
         start_index = 0
@@ -170,8 +166,8 @@ class PymarlMARoadEnv(MultiAgentEnv):
             nested_list.append(flat_list[start_index:end_index])
             start_index = end_index
         return nested_list
-    
-    def get_list_obs(self, nested_list): #Done
+
+    def get_list_obs(self, nested_list):
         """Structures a nested list into a flat list."""
         flat_list = []
         for sublist in nested_list:
@@ -179,14 +175,28 @@ class PymarlMARoadEnv(MultiAgentEnv):
                 flat_list.append(item)
         return flat_list
 
-    def get_state(self): #Done
+    def get_obs_and_time(self):
+        """Returns observations and normalized time step."""
+        obs_list = self.get_list_obs(self.road_env._get_observation()["edge_beliefs"])
+        observations = []
+        for item in obs_list:
+            observations.append(
+                np.append(
+                    item,
+                    self.road_env._get_observation()["time_step"]
+                    / self.road_env.max_timesteps,
+                )
+            )
+        return observations
+
+    def get_state(self):
         """Returns the state of the environment."""
         state = []
         if self.state_obs:
             state = np.append(state, self.all_obs_from_struct_env())
         return state
 
-    def get_state_size(self): #Done
+    def get_state_size(self):
         """Returns the shape of the state"""
         return len(self.get_state())
 
@@ -198,7 +208,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
             avail_actions.append(avail_agent)
         return avail_actions
 
-    def get_avail_agent_actions(self, agent_id): #Done
+    def get_avail_agent_actions(self, agent_id):
         """
         Returns the available actions for agent_id.
 
@@ -207,19 +217,21 @@ class PymarlMARoadEnv(MultiAgentEnv):
         """
         return [1] * self.n_actions
 
-    def get_total_actions(self): #Done
+    def get_total_actions(self):
         """Returns the total number of actions an agent could ever take."""
         return self.n_actions
 
-    def reset(self): #Done
+    def reset(self):
         """Returns initial observations and states."""
         # self.action_histogram = {"action_" + str(k): 0 for k in range(self.n_actions)}
         self.road_env.reset()
-        obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
-        observations = []
-        for item in obs_list:
-            observations.append( np.append(item, self.road_env._get_observation()['time_step'] / self.road_env.max_timesteps ))
-        self.observations = observations
+
+        self.observations = self.get_obs_and_time()
+        # obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
+        # observations = []
+        # for item in obs_list:
+        #     observations.append( np.append(item, self.road_env._get_observation()['time_step'] / self.road_env.max_timesteps ))
+        # self.observations = observations
         # self.observations = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
         return self.get_obs(), self.get_state()
 

@@ -46,8 +46,3 @@ repeat_id: 1
 label: "default_label"
 
 # --- Env default values ---
-env_args:
-  custom_param:
-    k_comp: #None (will not raise error)
-    lev: #None (will raise an error)
-  campaign_cost: False
