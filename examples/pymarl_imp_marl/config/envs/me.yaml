@@ -5,6 +5,7 @@ env_args:
   discount_reward: 1.0
   state_obs: True
   obs_multiple: False
+  reward_normalization: 100000.0
 
 learner_log_interval: 25000
 log_interval: 25000

@@ -17,6 +17,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
         discount_reward: float = 1.0,
         state_obs: bool = True,
         obs_multiple: bool = False,
+        reward_normalization: float = 10000.0,
         seed=None,
     ):
         """
@@ -39,6 +40,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
         self.discount_reward = discount_reward
         self.state_obs = state_obs
         self.obs_multiple = obs_multiple
+        self.reward_normalization = reward_normalization
         self._seed = seed
 
         self.road_env = make(env_type)
@@ -101,7 +103,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
         # }
         actions_nested = self.get_nested_list(actions, self.number_edges)
         _, reward, done, _ = self.road_env.step(actions_nested)
-
+        reward /= self.reward_normalization
         self.observations = self.get_obs_and_time()
         # obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
         # observations = []
