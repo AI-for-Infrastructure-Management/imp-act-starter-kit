@@ -18,7 +18,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
         state_obs: bool = True,
         obs_multiple: bool = False,
         reward_normalization: float = 10000.0,
-        tuning_factor: float = -500,
+        tuning_factor: float = -500.0,
         seed=None,
     ):
         """
