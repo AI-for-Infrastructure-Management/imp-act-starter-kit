@@ -161,3 +161,7 @@ cython_debug/
 
 # MAC OS
 .DS_Store
+
+# PyMARL
+examples/results
+examples/pymarl_imp_marl/results

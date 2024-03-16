@@ -1,0 +1,16 @@
+env: road_marl
+
+env_args:
+  env_type: "Denmark-v1"
+  discount_reward: 1.0
+  state_obs: True
+  obs_multiple: False
+  reward_normalization: 100000.0
+
+learner_log_interval: 25000
+log_interval: 25000
+runner_log_interval: 25000
+test_interval: 25000
+test_nepisode: 100
+test_greedy: True
+t_max: 2050000
