@@ -18,6 +18,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
         state_obs: bool = True,
         obs_multiple: bool = False,
         reward_normalization: float = 10000.0,
+        tuning_factor: float = -500,
         seed=None,
     ):
         """
@@ -41,9 +42,11 @@ class PymarlMARoadEnv(MultiAgentEnv):
         self.state_obs = state_obs
         self.obs_multiple = obs_multiple
         self.reward_normalization = reward_normalization
+        self.tuning_factor = tuning_factor
         self._seed = seed
 
         self.road_env = make(env_type)
+        self.road_env.travel_time_reward_factor = tuning_factor
 
         self.number_edges = []
         for edge in self.road_env.graph.es:
