@@ -1,8 +1,7 @@
 """ Wrapper for road_env respecting the interface of PyMARL. """
 import numpy as np
 
-from imp_rl_challenge import get_environment
-
+from imp_act import make
 from .MultiAgentEnv import MultiAgentEnv
 
 
@@ -14,7 +13,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
 
     def __init__(
         self,
-        env_type: str = "toy_environment_numpy",
+        env_type: str = "ToyExample-v1",
         discount_reward: float = 1.0,
         state_obs: bool = True,
         obs_multiple: bool = False,
@@ -42,7 +41,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
         self.obs_multiple = obs_multiple
         self._seed = seed
 
-        self.road_env = get_environment(env_type)
+        self.road_env = make(env_type)
 
         self.number_edges = []
         for edge in self.road_env.graph.es:
@@ -52,7 +51,7 @@ class PymarlMARoadEnv(MultiAgentEnv):
 
         self.episode_limit = self.road_env.max_timesteps
         # self.agent_list = self.struct_env.agent_list
-        self.n_actions = 3
+        self.n_actions = 5
         self.road_env.reset()
 
         # obs_list = self.get_list_obs(self.road_env._get_observation()['edge_beliefs'])
