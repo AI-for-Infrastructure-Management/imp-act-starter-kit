@@ -1,0 +1,3 @@
+[submodule "examples/imp-act-epymarl"]
+	path = examples/imp-act-epymarl
+	url = https://github.com/AI-for-Infrastructure-Management/imp-act-epymarl.git
