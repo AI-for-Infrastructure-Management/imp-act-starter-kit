@@ -39,6 +39,16 @@ def create_timestamped_directory(identifier):
     os.makedirs(full_path, exist_ok=True)
     return full_path
 
+def convert_numpy(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()  # Convert arrays to lists
+    else:
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
 if __name__ == '__main__':
 
     # Load the YAML configuration file
@@ -71,17 +81,26 @@ if __name__ == '__main__':
     # Redirect print statements to both the console and a specified output file
     output_file = os.path.join(directory_path, "output_log.txt")
     sys.stdout = Tee(output_file)   # Redirect print to both file and console
+    output_dict = {}
 
     print(f"Running environment: {environment_setting}")
 
     # Run all heuristic combinations
-    heuristic_agent.optimize_heuristics(episodes_optimize)
+    _ = heuristic_agent.optimize_heuristics(episodes_optimize)
 
     # Re-evaluate the best policy
-    heuristic_agent.evaluate_heuristics(episodes_eval)
+    _, rew_stats = heuristic_agent.evaluate_heuristics(episodes_eval)
 
     # Print the policy
     heuristic_agent.print_policy(episodes_print)
+
+    # Save the best rules and policy value to a JSON file
+    output_dict["return_stats"] = rew_stats
+    if 'rules_range' in config:
+        output_dict["best_rules"] = heuristic_agent.best_rules
+    
+    with open(os.path.join(directory_path, "output.json"), "w") as file:
+        json.dump(output_dict, file, indent=4, default=convert_numpy)
 
     # Restore standard output to the console
     sys.stdout.file.close()  # Close the output file when done
