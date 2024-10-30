@@ -1,4 +1,4 @@
-from heuristic import Heuristic
+from heuristics.heuristic import Heuristic
 
 class HumbleHeuristic(Heuristic):
     def __init__(self, env, norm_constant=1e6, rules_range=None):
