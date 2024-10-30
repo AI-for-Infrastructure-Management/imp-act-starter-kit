@@ -1,10 +1,13 @@
 environment_setting: "ToyExample-v2"
 output_file: "option_out.txt"
-norm_constant: 1e6
+norm_constant: 1_000_000
 
 episodes_optimize: 100
 episodes_eval: 1000
 episodes_print: 1
+
+heuristic_category: "standard_heuristics"
+heuristic_class: "HumbleHeuristic"
 
 rules_range:
   replacement_threshold:
