@@ -35,19 +35,21 @@ class Heuristic:
             obs = next_obs
 
             if verbose:
-                print(f"actions: {actions}")
-                print(f"observations: {obs['edge_observations']}")
                 print(f"timestep: {obs['time_step']}")
+                print(f"actions: {actions}")
                 print(f"reward: {reward/1e6:.3f}, total_travel_time: {info['total_travel_time']:.3f}")
-                print(f"travel time reward: {info['reward_elements'][0]/1e6:.3f}, maintenance reward: {info['reward_elements'][1]/1e6:.3f}")
+                print(f"travel time reward: {info['reward_elements']['travel_time_reward']/1e6:.3f}, maintenance reward: {info['reward_elements']['maintenance_reward']/1e6:.3f}")
                 print(f"Remaining maintenance budget: {obs['budget_remaining']/1e6:.3f}")
                 print(f"Budget until renewal: {obs['budget_time_until_renewal']}")
+                print("="*50)
+                print(f"observations: {obs['edge_observations']}")
+                
 
             total_reward += reward
             store_rewards['reward'].append(reward)
             store_rewards['total_travel_time'].append(info['total_travel_time'])
-            store_rewards['travel_time_reward'].append(info['reward_elements'][0])
-            store_rewards['maintenance_reward'].append(info['reward_elements'][1])
+            store_rewards['travel_time_reward'].append(info['reward_elements']['travel_time_reward'])
+            store_rewards['maintenance_reward'].append(info['reward_elements']['maintenance_reward'])
 
         return total_reward, store_rewards
     
