@@ -39,8 +39,11 @@ class DoNothing(Heuristic):
 
         edge_obs = obs['edge_observations']
         
+        actions = []
         # Always do nothing
-        actions = [[0] * len(e["road_edge"].segments) for e in edge_obs]
+        for e in edge_obs:
+            actions_edge = [0] * len(e)
+            actions.append(actions_edge)
 
         return actions
 

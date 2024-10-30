@@ -52,7 +52,7 @@ def convert_numpy(obj):
 if __name__ == '__main__':
 
     # Load the YAML configuration file
-    with open("config/humble_heuristic.yaml", "r") as file:
+    with open("config/do_nothing.yaml", "r") as file:
         config = yaml.safe_load(file)
     
     environment_setting = config['environment_setting']
@@ -75,7 +75,10 @@ if __name__ == '__main__':
 
 
     env = make(environment_setting)
-    heuristic_agent = heuristic_class(env, norm_constant, rules_range)
+    if 'rules_range' in config:
+        heuristic_agent = heuristic_class(env, norm_constant, rules_range)
+    else:
+        heuristic_agent = heuristic_class(env, norm_constant)
     directory_path = create_timestamped_directory(exp_name)
 
     # Redirect print statements to both the console and a specified output file
