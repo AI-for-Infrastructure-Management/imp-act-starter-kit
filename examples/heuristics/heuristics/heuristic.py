@@ -3,13 +3,15 @@ from itertools import product
 import numpy as np
 
 class Heuristic:
-    def __init__(self, config):
-        self.config = config
-        self.env = config.env
-        self.norm_constant = config.norm_constant
-        self.rules_range = config.rules_range
-        self.rules_values = {}
-        self.best_rules = {}
+    def __init__(self, env, norm_constant=1e6, rules_range=None):
+        self.env = env
+        self.norm_constant = norm_constant
+
+        if rules_range is not None:
+            self.rules_range = rules_range
+            # Initialize the rules values with the first set of rules
+            self.rules_values = {key: list(rules)[0] for key, rules in rules_range.items()}
+            self.best_rules = self.rules_values
 
     def policy(self, obs):
         """ Returns actions """
