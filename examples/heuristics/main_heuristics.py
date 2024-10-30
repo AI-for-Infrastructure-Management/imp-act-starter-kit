@@ -4,6 +4,7 @@ import importlib
 import json
 import os
 from datetime import datetime
+import argparse
 
 import numpy as np
 
@@ -51,8 +52,14 @@ def convert_numpy(obj):
 
 if __name__ == '__main__':
 
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description="Run with specified config file")
+    parser.add_argument("--config", type=str, required=True, help="Path to the config file")
+    args = parser.parse_args()
+
     # Load the YAML configuration file
-    with open("config/do_nothing.yaml", "r") as file:
+    config_file = "config/" + args.config + ".yaml"
+    with open(config_file, "r") as file:
         config = yaml.safe_load(file)
     
     environment_setting = config['environment_setting']
