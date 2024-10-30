@@ -11,6 +11,10 @@ class Heuristic:
         self.rules_values = {}
         self.best_rules = {}
 
+    def policy(self, obs):
+        """ Returns actions """
+        raise NotImplementedError
+    
     def get_rollout(self, env, policy, verbose=False):
         obs = env.reset()
         done = False
@@ -21,15 +25,12 @@ class Heuristic:
                         'total_travel_time': []}
 
         while not done:
-            current_time = env.timestep
-
             # To be modified according to the policy
-            actions = policy()
+            actions = policy(obs)
 
             next_obs, reward, done, info = env.step(actions)
 
             obs = next_obs
-            current_time += 1
 
             if verbose:
                 print(f"actions: {actions}")
@@ -47,12 +48,8 @@ class Heuristic:
             store_rewards['maintenance_reward'].append(info['reward_elements'][1])
 
         return total_reward, store_rewards
-
-    def policy(self):
-        """ Returns actions """
-        raise NotImplementedError
     
-    def compute_heuristics(self, num_episodes):
+    def optimize_heuristics(self, num_episodes):
         # Determine the dimensions for each rule range
         rules_range_dimensions = [len(rule) for rule in self.rules_range.values()]
         store_policy_rewards = np.zeros((num_episodes, *rules_range_dimensions))
@@ -74,11 +71,7 @@ class Heuristic:
                 # Use unpacking to store rewards in the correct array dimension
                 store_policy_rewards[(episode, *indices)], _ = self.get_rollout(
                     self.env,
-                    lambda edge_obs, current_time: self.policy(
-                        edge_obs,
-                        current_time,
-                        **self.rules_values
-                    )
+                    lambda obs: self.policy(obs)
                 )
         
         # Compute heuristic policies by averaging across episodes and normalizing
@@ -97,17 +90,14 @@ class Heuristic:
     
         return store_policy_rewards
     
-    def evaluate_heuristic(self, num_episodes):
+    def evaluate_heuristics(self, num_episodes):
+        self.rules_values = self.best_rules
         # Re-evaluate the best policy
         best_policy_rewards = np.zeros(num_episodes)
         for episode in range(num_episodes):
             best_policy_rewards[episode], _ = self.get_rollout(
                 self.env,
-                lambda edge_obs, current_time: self.policy(
-                    edge_obs,
-                    current_time,
-                    **self.best_rules
-                )
+                lambda obs: self.policy(obs)
             )
         
         best_policy_mean = np.mean(best_policy_rewards)/self.norm_constant
@@ -118,16 +108,13 @@ class Heuristic:
         return best_policy_rewards
 
     def print_policy(self, num_episodes):
+        self.rules_values = self.best_rules
         for _ in range(num_episodes):
             print_policy_reward, _ = self.get_rollout(
                 self.env,
-                lambda edge_obs, current_time: self.policy(
-                    edge_obs,
-                    current_time,
-                    **self.best_rules,
-                    verbose=True
+                lambda obs: self.policy(obs),
+                verbose=True
                 )
-            )
         
             print(print_policy_reward/self.norm_constant)
 
