@@ -106,10 +106,12 @@ class Heuristic:
         
         best_policy_mean = np.mean(best_policy_rewards)/self.norm_constant
         best_policy_std = np.std(best_policy_rewards)/self.norm_constant
+        confidence_interval = 1.96 * best_policy_std / np.sqrt(num_episodes)
         print(f"Best policy with evaluated reward: {best_policy_mean:.3f}")
         print(f"Standard deviation of the best policy: {best_policy_std:.3f}")
-        print(f"95% Confidence interval: {1.96*best_policy_std/np.sqrt(num_episodes):.3f}")
-        return best_policy_rewards
+        print(f"95% Confidence interval: {confidence_interval:.3f}")
+        reward_stats = [best_policy_mean, best_policy_std, confidence_interval]
+        return best_policy_rewards, reward_stats
 
     def print_policy(self, num_episodes):
         self.rules_values = self.best_rules
