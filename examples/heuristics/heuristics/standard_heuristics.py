@@ -1,4 +1,5 @@
 from heuristics.heuristic import Heuristic
+import numpy as np
 
 class HumbleHeuristic(Heuristic):
     def __init__(self, env, norm_constant=1e6, rules_range=None):
@@ -43,6 +44,23 @@ class DoNothing(Heuristic):
         # Always do nothing
         for e in edge_obs:
             actions_edge = [0] * len(e)
+            actions.append(actions_edge)
+
+        return actions
+    
+class RandomPolicy(Heuristic):
+    def __init__(self, env, norm_constant=1e6, rules_range=None):
+        super().__init__(env, norm_constant, rules_range)
+
+    def policy(self, obs):
+
+        edge_obs = obs['edge_observations']
+        
+        actions = []
+        # Always do nothing
+        for e in edge_obs:
+            # Generate a random action for each segment in the edge observation (values 0 to 4)
+            actions_edge = np.random.randint(0, 5, size=len(e)).tolist()
             actions.append(actions_edge)
 
         return actions
