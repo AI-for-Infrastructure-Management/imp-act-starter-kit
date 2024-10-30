@@ -1,0 +1,25 @@
+environment_setting: "ToyExample-v2"
+output_file: "option_out.txt"
+norm_constant: 1e6
+
+episodes_optimize: 100
+episodes_eval: 1000
+episodes_print: 1
+
+rules_range:
+  replacement_threshold:
+    min: 5
+    max: 6
+    interval: 1
+  major_repair_threshold:
+    min: 5
+    max: 6
+    interval: 1
+  minor_repair_threshold:
+    min: 2
+    max: 4
+    interval: 1
+  inspection_interval:
+    min: 1
+    max: 51
+    interval: 5
