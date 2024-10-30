@@ -1,6 +1,9 @@
 import sys
 import yaml
 import importlib
+import json
+import os
+from datetime import datetime
 
 import numpy as np
 
@@ -21,15 +24,29 @@ def load_class_from_config(heuristic_category, heuristic_class):
 
     return heuristic_class
 
+def create_timestamped_directory(identifier):
+    # Set the base path to the 'results' directory in the current working directory
+    base_path = os.path.join(os.getcwd(), "results")
+    
+    # Get current date and time in the format YYYY-MM-DD_HH-MM-SS
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    
+    # Create the directory path with the timestamp and identifier
+    dir_name = f"{identifier}_{timestamp}"
+    full_path = os.path.join(base_path, dir_name)
+    
+    # Create the directory
+    os.makedirs(full_path, exist_ok=True)
+    return full_path
+
 if __name__ == '__main__':
 
     # Load the YAML configuration file
     with open("config/humble_heuristic.yaml", "r") as file:
         config = yaml.safe_load(file)
-
     
     environment_setting = config['environment_setting']
-    output_file = config['output_file']
+    exp_name = config['exp_name']
     norm_constant = config['norm_constant']
     episodes_optimize = config['episodes_optimize']
     episodes_eval = config['episodes_eval']
@@ -46,11 +63,14 @@ if __name__ == '__main__':
             for key, value in config['rules_range'].items()
         }
 
-    # Redirect print statements to both the console and a specified output file
-    sys.stdout = Tee(output_file)   # Redirect print to both file and console
 
     env = make(environment_setting)
     heuristic_agent = heuristic_class(env, norm_constant, rules_range)
+    directory_path = create_timestamped_directory(exp_name)
+
+    # Redirect print statements to both the console and a specified output file
+    output_file = os.path.join(directory_path, "output_log.txt")
+    sys.stdout = Tee(output_file)   # Redirect print to both file and console
 
     print(f"Running environment: {environment_setting}")
 
@@ -66,5 +86,3 @@ if __name__ == '__main__':
     # Restore standard output to the console
     sys.stdout.file.close()  # Close the output file when done
     sys.stdout = sys.stdout.console  # Restore normal printing to the console
-
-
