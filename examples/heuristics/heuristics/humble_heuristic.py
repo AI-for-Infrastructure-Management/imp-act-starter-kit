@@ -30,4 +30,17 @@ class HumbleHeuristic(Heuristic):
                     edge_actions.append(0)  # Do nothing
             actions.append(edge_actions)
         return actions
+    
+class DoNothing(Heuristic):
+    def __init__(self, env, norm_constant=1e6, rules_range=None):
+        super().__init__(env, norm_constant, rules_range)
+
+    def policy(self, obs):
+
+        edge_obs = obs['edge_observations']
+        
+        # Always do nothing
+        actions = [[0] * len(e["road_edge"].segments) for e in edge_obs]
+
+        return actions
 
