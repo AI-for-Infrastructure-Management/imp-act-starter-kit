@@ -1,34 +1,56 @@
 import sys
+import yaml
+import importlib
 
 import numpy as np
 
-from heuristics.standard_heuristics import HumbleHeuristic
 from utils.logger import Tee
 
 from imp_act import make
 
+def load_class_from_config(heuristic_category, heuristic_class):
+    # Build the module path dynamically
+    module_path = f"heuristics.{heuristic_category}"
+    class_name = heuristic_class
+
+    # Import the module
+    module = importlib.import_module(module_path)
+
+    # Get the class from the module
+    heuristic_class = getattr(module, class_name)
+
+    return heuristic_class
+
 if __name__ == '__main__':
+
+    # Load the YAML configuration file
+    with open("config/humble_heuristic.yaml", "r") as file:
+        config = yaml.safe_load(file)
+
     
-    environment_setting = "ToyExample-v2"
-    output_file = "option_out.txt"
-    norm_constant = 1e6
+    environment_setting = config['environment_setting']
+    output_file = config['output_file']
+    norm_constant = config['norm_constant']
+    episodes_optimize = config['episodes_optimize']
+    episodes_eval = config['episodes_eval']
+    episodes_print = config['episodes_print']
 
-    episodes_optimize = 100
-    episodes_eval = 1000
-    episodes_print = 1 
+    # Load the heuristic class from the configuration file
+    heuristic_class = load_class_from_config(config['heuristic_category'], 
+                                        config['heuristic_class'])
 
-    rules_range = {
-        'replacement_threshold': np.arange(5, 6, 1),
-        'major_repair_threshold': np.arange(5, 6, 1),
-        'minor_repair_threshold': np.arange(2, 4, 1),
-        'inspection_interval': np.arange(1, 51, 5)
-    }
+    # Create NumPy arrays for each rule based on min, max, and interval
+    if 'rules_range' in config:
+        rules_range = {
+            key: np.arange(value['min'], value['max'], value['interval'])
+            for key, value in config['rules_range'].items()
+        }
 
     # Redirect print statements to both the console and a specified output file
     sys.stdout = Tee(output_file)   # Redirect print to both file and console
 
     env = make(environment_setting)
-    heuristic_agent = HumbleHeuristic(env, norm_constant, rules_range)
+    heuristic_agent = heuristic_class(env, norm_constant, rules_range)
 
     print(f"Running environment: {environment_setting}")
 
