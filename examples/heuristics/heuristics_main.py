@@ -86,7 +86,8 @@ if __name__ == '__main__':
     print(f"Running environment: {environment_setting}")
 
     # Run all heuristic combinations
-    _ = heuristic_agent.optimize_heuristics(episodes_optimize)
+    if 'rules_range' in config:
+        _ = heuristic_agent.optimize_heuristics(episodes_optimize)
 
     # Re-evaluate the best policy
     _, rew_stats = heuristic_agent.evaluate_heuristics(episodes_eval)

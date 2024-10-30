@@ -6,9 +6,9 @@ class Heuristic:
     def __init__(self, env, norm_constant=1e6, rules_range=None):
         self.env = env
         self.norm_constant = norm_constant
+        self.rules_range = rules_range
 
         if rules_range is not None:
-            self.rules_range = rules_range
             # Initialize the rules values with the first set of rules
             self.rules_values = {key: list(rules)[0] for key, rules in rules_range.items()}
             self.best_rules = self.rules_values
@@ -95,7 +95,8 @@ class Heuristic:
         return store_policy_rewards
     
     def evaluate_heuristics(self, num_episodes):
-        self.rules_values = self.best_rules
+        if self.rules_range is not None:
+            self.rules_values = self.best_rules
         # Re-evaluate the best policy
         best_policy_rewards = np.zeros(num_episodes)
         for episode in range(num_episodes):
@@ -114,7 +115,8 @@ class Heuristic:
         return best_policy_rewards, reward_stats
 
     def print_policy(self, num_episodes):
-        self.rules_values = self.best_rules
+        if self.rules_range is not None:
+            self.rules_values = self.best_rules
         for _ in range(num_episodes):
             print_policy_reward, _ = self.get_rollout(
                 self.env,
