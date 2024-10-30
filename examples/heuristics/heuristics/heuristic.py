@@ -57,7 +57,7 @@ class Heuristic:
         store_policy_rewards = np.zeros((num_episodes, *rules_range_dimensions))
 
         # Generate all possible combinations of rules
-        combinations = list(product(*self.rules_range.items()))
+        combinations = list(product(*self.rules_range.values()))
 
         for episode in range(num_episodes):
             for idx, rules in enumerate(combinations):
