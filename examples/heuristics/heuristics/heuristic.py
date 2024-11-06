@@ -1,6 +1,21 @@
-from itertools import product
+import itertools
+import multiprocessing as mp
 
 import numpy as np
+
+
+def parallel_rollout(env, heuristic, rollout_method, num_episodes):
+
+    # create an iterable for the starmap
+    iterable = zip(
+        itertools.repeat(env, num_episodes), itertools.repeat(heuristic, num_episodes)
+    )
+
+    # multiprocessing using all available cores
+    with mp.Pool(mp.cpu_count()) as pool:
+        list_func_evaluations = pool.starmap(rollout_method, iterable)
+
+    return np.hstack(list_func_evaluations)
 
 
 class Heuristic:
@@ -24,48 +39,31 @@ class Heuristic:
         obs = env.reset()
         done = False
         total_reward = 0
-        store_rewards = {
-            "reward": [],
-            "travel_time_reward": [],
-            "maintenance_reward": [],
-            "total_travel_time": [],
-        }
 
         while not done:
-            # To be modified according to the policy
             actions = policy(obs)
 
-            next_obs, reward, done, info = env.step(actions)
-
-            obs = next_obs
+            obs, reward, done, info = env.step(actions)
 
             if verbose:
                 print(f"timestep: {obs['time_step']}")
                 print(f"actions: {actions}")
                 print(
-                    f"reward: {reward/1e6:.3f}, total_travel_time: {info['total_travel_time']:.3f}"
+                    f"reward: {reward/self.norm_constant:.3f}, total_travel_time: {info['total_travel_time']:.3f}"
                 )
                 print(
-                    f"travel time reward: {info['reward_elements']['travel_time_reward']/1e6:.3f}, maintenance reward: {info['reward_elements']['maintenance_reward']/1e6:.3f}"
+                    f"travel time reward: {info['reward_elements']['travel_time_reward']/self.norm_constant:.3f}, maintenance reward: {info['reward_elements']['maintenance_reward']/self.norm_constant:.3f}"
                 )
                 print(
-                    f"Remaining maintenance budget: {obs['budget_remaining']/1e6:.3f}"
+                    f"Remaining maintenance budget: {obs['budget_remaining']/self.norm_constant:.3f}"
                 )
-                print(f"Budget until renewal: {obs['budget_time_until_renewal']}")
+                print(f"Time until budget renewal: {obs['budget_time_until_renewal']}")
                 print("=" * 50)
                 print(f"observations: {obs['edge_observations']}")
 
             total_reward += reward
-            store_rewards["reward"].append(reward)
-            store_rewards["total_travel_time"].append(info["total_travel_time"])
-            store_rewards["travel_time_reward"].append(
-                info["reward_elements"]["travel_time_reward"]
-            )
-            store_rewards["maintenance_reward"].append(
-                info["reward_elements"]["maintenance_reward"]
-            )
 
-        return total_reward, store_rewards
+        return total_reward
 
     def optimize_heuristics(self, num_episodes):
         # Determine the dimensions for each rule range
@@ -73,26 +71,37 @@ class Heuristic:
         store_policy_rewards = np.zeros((num_episodes, *rules_range_dimensions))
 
         # Generate all possible combinations of rules
-        combinations = list(product(*self.rules_range.values()))
+        combinations = itertools.product(*self.rules_range.values())
 
-        for episode in range(num_episodes):
-            for idx, rules in enumerate(combinations):
-                # Dynamically find indices for each threshold based on `self.rules_range` keys
-                indices = [
-                    list(self.rules_range[key]).index(threshold)
-                    for key, threshold in zip(self.rules_range.keys(), rules)
-                ]
+        for rules in combinations:
+            # Dynamically find indices for each threshold based on `self.rules_range` keys
+            indices = [
+                list(self.rules_range[key]).index(threshold)
+                for key, threshold in zip(self.rules_range.keys(), rules)
+            ]
 
-                # Store the rules values in a dictionary
-                self.rules_values = {
-                    key: threshold
-                    for key, threshold in zip(self.rules_range.keys(), rules)
-                }
+            # Store the rules values in a dictionary
+            self.rules_values = {
+                key: threshold for key, threshold in zip(self.rules_range.keys(), rules)
+            }
 
-                # Use unpacking to store rewards in the correct array dimension
-                store_policy_rewards[(episode, *indices)], _ = self.get_rollout(
-                    self.env, lambda obs: self.policy(obs)
-                )
+            # Evaluate the rule using environment rollouts
+
+            # sequential evaluation
+            # for episode in range(num_episodes):
+
+            #     # Use unpacking to store rewards in the correct array dimension
+            #     store_policy_rewards[(episode, *indices)], _ = self.get_rollout(
+            #         self.env, self.policy
+            #     )
+
+            # parallel evaluation
+            results = parallel_rollout(
+                self.env, self.policy, self.get_rollout, num_episodes
+            )
+
+            # Python 3.9 does not support tuple unpacking in indexing, so we use slice(None) to unpack the tuple
+            store_policy_rewards[(slice(None), *indices)] = results
 
         # Compute heuristic policies by averaging across episodes and normalizing
         policies_heur = (
@@ -121,11 +130,9 @@ class Heuristic:
         if self.rules_range is not None:
             self.rules_values = self.best_rules
         # Re-evaluate the best policy
-        best_policy_rewards = np.zeros(num_episodes)
-        for episode in range(num_episodes):
-            best_policy_rewards[episode], _ = self.get_rollout(
-                self.env, lambda obs: self.policy(obs)
-            )
+        best_policy_rewards = parallel_rollout(
+            self.env, self.policy, self.get_rollout, num_episodes
+        )
 
         best_policy_mean = np.mean(best_policy_rewards) / self.norm_constant
         best_policy_std = np.std(best_policy_rewards) / self.norm_constant
@@ -140,8 +147,6 @@ class Heuristic:
         if self.rules_range is not None:
             self.rules_values = self.best_rules
         for _ in range(num_episodes):
-            print_policy_reward, _ = self.get_rollout(
-                self.env, lambda obs: self.policy(obs), verbose=True
-            )
+            total_reward = self.get_rollout(self.env, self.policy, verbose=True)
 
-            print(print_policy_reward / self.norm_constant)
+            print(f"Episode return: {total_reward/self.norm_constant:.3f}")
