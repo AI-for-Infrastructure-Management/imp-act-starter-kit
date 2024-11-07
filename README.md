@@ -53,7 +53,7 @@ from imp_act import make
 # initialize the environment
 env = make("ToyExample-v2")
 ```
-## Road network(Graph) parameters
+## Road network (Graph) parameters
 We use the igraph library to represent the road network graph, which is stored in the env object. For more information on igraph, see: https://python.igraph.org/en/stable/tutorial.html
 ```python
 g = env.graph
