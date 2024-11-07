@@ -14,6 +14,10 @@
 The multi-agent infrastructure management planning (IMP-ACT) environment simulates a real-world road network consisting of multiple road edges decomposed into distinct road segments which need to be adequately maintained over a planning horizon. The environment involves multiple agents, where each agent is responsible for maintaining a road segment in order to minimize certain shared objectives while meeting specific budget constraints. 
 
 ## What does it look like?
+The illustration below introduces the abstractions and terminology used in the environment.
+<p align="center">
+<img src="docs/environment_overview.png" alt="Description" style="width:80%;">
+</p>
 
 ## Action Space
 In this environment simulation, agents for the road segments have the following discrete action space:
