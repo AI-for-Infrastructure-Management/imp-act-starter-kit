@@ -16,7 +16,7 @@ The multi-agent infrastructure management planning (IMP-ACT) environment simulat
 ## What does it look like?
 The illustration below introduces the abstractions and terminology used in the environment.
 <p align="center">
-<img src="docs/environment_overview.png" alt="Description" style="width:80%;">
+<img src="examples/environment_overview.png" alt="Description" style="width:80%;">
 </p>
 
 ## Action Space
