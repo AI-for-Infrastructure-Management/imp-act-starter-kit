@@ -53,6 +53,7 @@ from imp_act import make
 # initialize the environment
 env = make("ToyExample-v2")
 ```
+## Road network(Graph) parameters
 We use the igraph library to represent the road network graph, which is stored in the env object. For more information on igraph, see: https://python.igraph.org/en/stable/tutorial.html
 ```python
 g = env.graph
@@ -79,7 +80,7 @@ for edge in env.graph.es:
 
 print()
 ```
-
+## Road segment variables
 A road segment is the fundamental deteriorating unit of the road network. It has a damage state, observation, belief, capacity, and base travel time. Let us access the first road segment of the second road edge
 ```python
 road_edge = env.graph.es[1]["road_edge"]
@@ -92,21 +93,23 @@ print(f"Belief: {road_segment.belief}")
 print(f"Capacity: {road_segment.capacity}")
 print(f"Base travel time: {road_segment.base_travel_time}")
 ```
-The traffic summary for each road edge in the network is shown here.
-```python
-print(env.get_edge_traffic_summary())
-```
-The reset and step functions are identical to Gym. The environment can be reset as:
-```python
-obs = env.reset()
-```
-There are 5 actions for each component: 
+There are 5 actions for each road segment: 
 - 0: do-nothing
 - 1: inspect
 - 2: minor-repair
 - 3: major-repair 
 - 4: replace
-
+  
+## Traffic summary
+The traffic summary for each road edge in the network is shown here.
+```python
+print(env.get_edge_traffic_summary())
+```
+## Environment functions
+The reset and step functions are identical to Gym. The environment can be reset as:
+```python
+obs = env.reset()
+```
 Let us pick the minor-repair (2) action for all road segments
 ```python
 system_actions = []
@@ -130,4 +133,21 @@ pprint(f"Reward: {reward}")
 pprint(f"Done: {done}")
 print("Info:")
 pprint(info)
+```
+## Environment Rollout
+```python
+obs = env.reset()
+done = False
+timestep = 0
+
+while not done:
+
+    # system_actions = policy(observation)
+
+    observation, reward, done, info = env.step(system_actions)
+
+    timestep += 1
+
+print(f"Number of timesteps: {timestep}")
+print(f"Done: {done}")
 ```
