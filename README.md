@@ -30,5 +30,21 @@ The conditon of each road segment is characterized by 5 discrete states. The obs
 At each timestep, the agents share the costs of maintaining the road segments of the network. The agents in this cooperative environment share the goal of minimizing the overall maintenance costs of the road network, while satisfying certain budget constraints which is renewed at regular intervals. 
 
 # Environment Parameters
+The IMP-ACT environment is characterized by a number of parameters:
+- The number of agents which represent the road segments (N)
+- The budget constraints to be maintained for the entire road network
 
+# Installation
+* Python >=3.7,<3.11 (note that you will need Python < 3.10 to run PyMARL or EPyMARL)
+* The imp-act package needs to be installed. This package will be released later. Until then, the requirements can be installed from the GitHub repository [IMP-ACT](https://github.com/AI-for-Infrastructure-Management/imp-act) as:
+  ```bash
+  git clone https://github.com/AI-for-Infrastructure-Management/imp-act.git
+```
+Installation via *pip requirements*
+```bash
+pip install -r requirements/requirements.txt
+pip install -e .
+```
+  
 
+# Getting Started
