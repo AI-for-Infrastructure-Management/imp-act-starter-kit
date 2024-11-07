@@ -37,14 +37,58 @@ The IMP-ACT environment is characterized by a number of parameters:
 # Installation
 * Python >=3.7,<3.11 (note that you will need Python < 3.10 to run PyMARL or EPyMARL)
 * The imp-act package needs to be installed. This package will be released later. Until then, the requirements can be installed from the GitHub repository [IMP-ACT](https://github.com/AI-for-Infrastructure-Management/imp-act) as:
-  ```bash
-  git clone https://github.com/AI-for-Infrastructure-Management/imp-act.git
+```bash
+git clone https://github.com/AI-for-Infrastructure-Management/imp-act.git
 ```
 Installation via *pip requirements*
 ```bash
 pip install -r requirements/requirements.txt
 pip install -e .
 ```
-  
 
 # Getting Started
+The IMP-ACT environment can be created using the IMP-ACT module as:
+```python
+from imp_act import make
+# initialize the environment
+env = make("ToyExample-v2")
+```
+We use the igraph library to represent the road network graph, which is stored in the env object. For more information on igraph, see: https://python.igraph.org/en/stable/tutorial.html
+```python
+g = env.graph
+```
+We demonstrate how to access some basic properties of the graph
+```python
+print(f"Number of nodes: {env.graph.vcount()}")
+print(f"Number of edges: {env.graph.ecount()}")
+print(f"Adjacency matrix: {g.get_adjacency().data}")
+print()
+```
+Each graph edge represents a unique road edge in the environment, and each road edge has multiple road segments.
+```python
+for edge in env.graph.es:
+    edge_index = edge.index
+
+    # Each graph edge has a unique RoadEdge object associated with it
+    road_edge = edge["road_edge"]
+
+    # Each RoadEdge object has a list of RoadSegment objects
+    num_segments = len(road_edge.segments)
+
+    print(f"Edge {edge_index} has {num_segments} segments")
+
+print()
+```
+
+A road segment is the fundamental deteriorating unit of the road network. It has a damage state, observation, belief, capacity, and base travel time. Let us access the first road segment of the second road edge
+```python
+road_edge = env.graph.es[1]["road_edge"]
+road_segment = road_edge.segments[0]
+
+print(f"Road segment 0 of edge 1 has the following properties:")
+print(f"Damage state: {road_segment.state}")
+print(f"Observation: {road_segment.observation}")
+print(f"Belief: {road_segment.belief}")
+print(f"Capacity: {road_segment.capacity}")
+print(f"Base travel time: {road_segment.base_travel_time}")
+```
