@@ -92,3 +92,42 @@ print(f"Belief: {road_segment.belief}")
 print(f"Capacity: {road_segment.capacity}")
 print(f"Base travel time: {road_segment.base_travel_time}")
 ```
+The traffic summary for each road edge in the network is shown here.
+```python
+print(env.get_edge_traffic_summary())
+```
+The reset and step functions are identical to Gym. The environment can be reset as:
+```python
+obs = env.reset()
+```
+There are 5 actions for each component: 
+- 0: do-nothing
+- 1: inspect
+- 2: minor-repair
+- 3: major-repair 
+- 4: replace
+
+Let us pick the minor-repair (2) action for all road segments
+```python
+system_actions = []
+for edge in env.graph.es:
+    road_edge = edge["road_edge"]
+    segment_actions = []
+    for segment in road_edge.segments:
+        segment_actions.append(2)
+
+    system_actions.append(segment_actions)
+
+print(f"System actions: {system_actions}")
+```
+A step in the environment can be taken as:
+```python
+observation, reward, done, info = env.step(system_actions)
+
+print("Observation:")
+pprint(observation)
+pprint(f"Reward: {reward}")
+pprint(f"Done: {done}")
+print("Info:")
+pprint(info)
+```
