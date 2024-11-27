@@ -1,0 +1,10 @@
+environment_setting: "ToyExample-v2"
+exp_name: "random_policy"
+norm_constant: 1_000_000
+
+episodes_optimize: 1 # Not used
+episodes_eval: 100
+episodes_print: 1
+
+heuristic_category: "standard_heuristics"
+heuristic_class: "RandomPolicy"
