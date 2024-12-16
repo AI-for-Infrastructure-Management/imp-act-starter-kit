@@ -12,6 +12,7 @@ from utils.logger import Tee
 
 from imp_act import make
 
+
 def load_class_from_config(heuristic_category, heuristic_class):
     # Build the module path dynamically
     module_path = f"heuristics.{heuristic_category}"
@@ -25,20 +26,22 @@ def load_class_from_config(heuristic_category, heuristic_class):
 
     return heuristic_class
 
+
 def create_timestamped_directory(identifier):
     # Set the base path to the 'results' directory in the current working directory
     base_path = os.path.join(os.getcwd(), "results")
-    
+
     # Get current date and time in the format YYYY-MM-DD_HH-MM-SS
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    
+
     # Create the directory path with the timestamp and identifier
     dir_name = f"{identifier}_{timestamp}"
     full_path = os.path.join(base_path, dir_name)
-    
+
     # Create the directory
     os.makedirs(full_path, exist_ok=True)
     return full_path
+
 
 def convert_numpy(obj):
     if isinstance(obj, np.integer):
@@ -50,39 +53,42 @@ def convert_numpy(obj):
     else:
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     # Set up argument parsing
     parser = argparse.ArgumentParser(description="Run with specified config file")
-    parser.add_argument("--config", type=str, required=True, help="Path to the config file")
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path to the config file"
+    )
     args = parser.parse_args()
 
     # Load the YAML configuration file
     config_file = "config/" + args.config + ".yaml"
     with open(config_file, "r") as file:
         config = yaml.safe_load(file)
-    
-    environment_setting = config['environment_setting']
-    exp_name = config['exp_name']
-    norm_constant = config['norm_constant']
-    episodes_optimize = config['episodes_optimize']
-    episodes_eval = config['episodes_eval']
-    episodes_print = config['episodes_print']
+
+    environment_setting = config["environment_setting"]
+    exp_name = config["exp_name"]
+    norm_constant = config["norm_constant"]
+    episodes_optimize = config["episodes_optimize"]
+    episodes_eval = config["episodes_eval"]
+    episodes_print = config["episodes_print"]
 
     # Load the heuristic class from the configuration file
-    heuristic_class = load_class_from_config(config['heuristic_category'], 
-                                        config['heuristic_class'])
+    heuristic_class = load_class_from_config(
+        config["heuristic_category"], config["heuristic_class"]
+    )
 
     # Create NumPy arrays for each rule based on min, max, and interval
-    if 'rules_range' in config:
+    if "rules_range" in config:
         rules_range = {
-            key: np.arange(value['min'], value['max'], value['interval'])
-            for key, value in config['rules_range'].items()
+            key: np.arange(value["min"], value["max"], value["interval"])
+            for key, value in config["rules_range"].items()
         }
 
-
     env = make(environment_setting)
-    if 'rules_range' in config:
+    if "rules_range" in config:
         heuristic_agent = heuristic_class(env, norm_constant, rules_range)
     else:
         heuristic_agent = heuristic_class(env, norm_constant)
@@ -90,13 +96,13 @@ if __name__ == '__main__':
 
     # Redirect print statements to both the console and a specified output file
     output_file = os.path.join(directory_path, "output_log.txt")
-    sys.stdout = Tee(output_file)   # Redirect print to both file and console
+    sys.stdout = Tee(output_file)  # Redirect print to both file and console
     output_dict = {}
 
     print(f"Running environment: {environment_setting}")
 
     # Run all heuristic combinations
-    if 'rules_range' in config:
+    if "rules_range" in config:
         _ = heuristic_agent.optimize_heuristics(episodes_optimize)
 
     # Re-evaluate the best policy
@@ -107,9 +113,9 @@ if __name__ == '__main__':
 
     # Save the best rules and policy value to a JSON file
     output_dict["return_stats"] = rew_stats
-    if 'rules_range' in config:
+    if "rules_range" in config:
         output_dict["best_rules"] = heuristic_agent.best_rules
-    
+
     with open(os.path.join(directory_path, "output.json"), "w") as file:
         json.dump(output_dict, file, indent=4, default=convert_numpy)
 
