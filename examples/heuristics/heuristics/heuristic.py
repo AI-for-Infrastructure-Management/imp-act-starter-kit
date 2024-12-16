@@ -3,8 +3,7 @@ import multiprocessing as mp
 
 import numpy as np
 
-import time
-
+import tqdm
 
 def parallel_rollout(env, heuristic, rollout_method, num_episodes):
 
@@ -76,7 +75,7 @@ class Heuristic:
         # Generate all possible combinations of rules
         combinations = itertools.product(*self.rules_range.values())
 
-        for rules in combinations:
+        for rules in tqdm.tqdm(combinations, total=np.prod(rules_range_dimensions)):
             # Dynamically find indices for each threshold based on `self.rules_range` keys
             indices = [
                 list(self.rules_range[key]).index(threshold)
