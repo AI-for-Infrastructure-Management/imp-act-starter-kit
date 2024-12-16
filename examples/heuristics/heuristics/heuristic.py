@@ -3,6 +3,8 @@ import multiprocessing as mp
 
 import numpy as np
 
+import time
+
 
 def parallel_rollout(env, heuristic, rollout_method, num_episodes):
 
@@ -35,7 +37,8 @@ class Heuristic:
         """Returns actions"""
         raise NotImplementedError
 
-    def get_rollout(self, env, policy, verbose=False):
+    def get_rollout(self, env, policy, seed=None, verbose=False):
+        env.seed(seed)
         obs = env.reset()
         done = False
         total_reward = 0
