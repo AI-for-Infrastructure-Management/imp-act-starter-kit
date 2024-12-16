@@ -1,0 +1,28 @@
+environment_setting: "Cologne-v1"
+exp_name: "humble_heuristic"
+norm_constant: 1_000_000
+
+episodes_optimize: 100
+episodes_eval: 1000
+episodes_print: 0
+
+heuristic_category: "standard_heuristics"
+heuristic_class: "HumbleHeuristic"
+
+rules_range:
+  replacement_threshold:
+    min: 5
+    max: 6
+    interval: 1
+  major_repair_threshold:
+    min: 5
+    max: 6
+    interval: 1
+  minor_repair_threshold:
+    min: 2
+    max: 4
+    interval: 1
+  inspection_interval:
+    min: 1
+    max: 51
+    interval: 5

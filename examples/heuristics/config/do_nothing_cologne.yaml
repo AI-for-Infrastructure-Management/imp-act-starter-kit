@@ -1,0 +1,10 @@
+environment_setting: "Cologne-v1"
+exp_name: "do_nothing"
+norm_constant: 1_000_000
+
+episodes_optimize: 1 # Not used
+episodes_eval: 1000
+episodes_print: 1
+
+heuristic_category: "standard_heuristics"
+heuristic_class: "DoNothing"
