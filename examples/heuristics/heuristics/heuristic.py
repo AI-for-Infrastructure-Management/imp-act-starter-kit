@@ -20,17 +20,23 @@ def parallel_rollout(env, heuristic, rollout_method, num_episodes):
 
 
 class Heuristic:
-    def __init__(self, env, norm_constant=1e6, rules_range=None):
+    def __init__(self, env, config, norm_constant):
         self.env = env
         self.norm_constant = norm_constant
-        self.rules_range = rules_range
 
-        if rules_range is not None:
+        if "rules_range" in config:
+            self.rules_range = {
+                key: np.arange(value["min"], value["max"], value["interval"])
+                for key, value in config["rules_range"].items()
+            }
             # Initialize the rules values with the first set of rules
             self.rules_values = {
-                key: list(rules)[0] for key, rules in rules_range.items()
+                key: list(rules)[0] for key, rules in self.rules_range.items()
             }
             self.best_rules = self.rules_values
+        else:
+            self.rules_range = None
+            self.best_rules = None
 
     def policy(self, obs):
         """Returns actions"""
@@ -74,6 +80,9 @@ class Heuristic:
 
         # Generate all possible combinations of rules
         combinations = itertools.product(*self.rules_range.values())
+
+        num_combinations = len(list(combinations))
+        print(f"Optimizing {num_combinations} heuristic policies\n")
 
         for rules in tqdm.tqdm(combinations, total=np.prod(rules_range_dimensions)):
             # Dynamically find indices for each threshold based on `self.rules_range` keys

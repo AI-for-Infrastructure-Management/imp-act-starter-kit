@@ -1,19 +1,20 @@
 from heuristics.heuristic import Heuristic
 import numpy as np
 
+
 class HumbleHeuristic(Heuristic):
-    def __init__(self, env, norm_constant=1e6, rules_range=None):
-        super().__init__(env, norm_constant, rules_range)
+    def __init__(self, env, config, norm_constant):
+        super().__init__(env, config, norm_constant)
 
     def policy(self, obs):
 
-        edge_obs = obs['edge_observations']
-        current_time = obs['time_step']
-        
-        replacement_threshold = self.rules_values['replacement_threshold'] 
-        major_repair_threshold = self.rules_values['major_repair_threshold'] 
-        minor_repair_threshold = self.rules_values['minor_repair_threshold'] 
-        inspection_interval = self.rules_values['inspection_interval'] 
+        edge_obs = obs["edge_observations"]
+        current_time = obs["time_step"]
+
+        replacement_threshold = self.rules_values["replacement_threshold"]
+        major_repair_threshold = self.rules_values["major_repair_threshold"]
+        minor_repair_threshold = self.rules_values["minor_repair_threshold"]
+        inspection_interval = self.rules_values["inspection_interval"]
 
         actions = []
         for e in edge_obs:
@@ -31,15 +32,19 @@ class HumbleHeuristic(Heuristic):
                     edge_actions.append(0)  # Do nothing
             actions.append(edge_actions)
         return actions
-    
+
+
 class DoNothing(Heuristic):
-    def __init__(self, env, norm_constant=1e6, rules_range=None):
-        super().__init__(env, norm_constant, rules_range)
+    def __init__(self, env, config, norm_constant):
+        super().__init__(env, config, norm_constant)
+
+    def optimize_heuristics(self, num_episodes):
+        pass
 
     def policy(self, obs):
 
-        edge_obs = obs['edge_observations']
-        
+        edge_obs = obs["edge_observations"]
+
         actions = []
         # Always do nothing
         for e in edge_obs:
@@ -47,15 +52,19 @@ class DoNothing(Heuristic):
             actions.append(actions_edge)
 
         return actions
-    
+
+
 class RandomPolicy(Heuristic):
-    def __init__(self, env, norm_constant=1e6, rules_range=None):
-        super().__init__(env, norm_constant, rules_range)
+    def __init__(self, env, config, norm_constant):
+        super().__init__(env, config, norm_constant)
+
+    def optimize_heuristics(self, num_episodes):
+        pass
 
     def policy(self, obs):
 
-        edge_obs = obs['edge_observations']
-        
+        edge_obs = obs["edge_observations"]
+
         actions = []
         # Always do nothing
         for e in edge_obs:
@@ -64,4 +73,3 @@ class RandomPolicy(Heuristic):
             actions.append(actions_edge)
 
         return actions
-
