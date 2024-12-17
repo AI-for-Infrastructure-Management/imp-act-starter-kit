@@ -7,13 +7,12 @@ from heuristics.heuristic import Heuristic
 import numpy as np
 
 
-def parallel_rollout(env, heuristic, rollout_method, num_episodes, policy_params):
+def parallel_rollout(env, heuristic, rollout_method, num_episodes):
 
     # create an iterable for the starmap
     iterable = zip(
         itertools.repeat(env, num_episodes),
         itertools.repeat(heuristic, num_episodes),
-        itertools.repeat(policy_params, num_episodes),
     )
 
     # multiprocessing using all available cores
@@ -21,6 +20,49 @@ def parallel_rollout(env, heuristic, rollout_method, num_episodes, policy_params
         list_func_evaluations = pool.starmap(rollout_method, iterable)
 
     return np.hstack(list_func_evaluations)
+
+
+class ImportancePolicy:
+
+    def __init__(self, policy_params, prioritized_components, component_ids):
+
+        self.prioritized_components = prioritized_components
+        self.policy_params = policy_params
+        self.component_ids = component_ids  # ordering of components in the observation
+
+    def __call__(self, obs):
+
+        edge_obs = obs["edge_observations"]
+        current_time = obs["time_step"]
+
+        actions = []
+        for comps, road_edge in zip(self.component_ids, edge_obs):
+            edge_actions = []
+            for c, o in zip(comps, road_edge):
+
+                if c in self.prioritized_components:
+                    _params = self.policy_params[c]
+                else:
+                    _params = self.policy_params
+
+                a = self._policy(_params, o, current_time)
+                edge_actions.append(a)
+            actions.append(edge_actions)
+
+        return actions
+
+    def _policy(self, thresholds, o, t):
+
+        if o >= thresholds["replacement_threshold"]:
+            return 4  # Reconstruction
+        elif o >= thresholds["major_repair_threshold"]:
+            return 3  # Major repair
+        elif o >= thresholds["minor_repair_threshold"]:
+            return 2  # Minor repair
+        elif t % thresholds["inspection_interval"] == 0:
+            return 1  # Inspection
+        else:
+            return 0  # Do nothing
 
 
 class ImportanceHeuristic(Heuristic):
@@ -44,13 +86,16 @@ class ImportanceHeuristic(Heuristic):
             f"Prioritized components ({self.num_prioritized}): {self.prioritized_components}"
         )
 
-    def get_rollout(self, env, policy, policy_params, verbose=False):
+        # list of component ids in the observation
+        self.component_ids = env.segment_ids
+
+    def get_rollout(self, env, policy, verbose=False):
         obs = env.reset()
         done = False
         total_reward = 0
 
         while not done:
-            actions = policy(obs, policy_params)
+            actions = policy(obs)
 
             obs, reward, done, info = env.step(actions)
 
@@ -74,49 +119,6 @@ class ImportanceHeuristic(Heuristic):
 
         return total_reward
 
-    def policy(self, obs, policy_params):
-
-        edge_obs = obs["edge_observations"]
-        current_time = obs["time_step"]
-
-        def component_policy(thresholds):
-
-            replacement_threshold = thresholds["replacement_threshold"]
-            major_repair_threshold = thresholds["major_repair_threshold"]
-            minor_repair_threshold = thresholds["minor_repair_threshold"]
-            inspection_interval = thresholds["inspection_interval"]
-
-            if obs >= replacement_threshold:
-                return 4  # Reconstruction
-            elif obs >= major_repair_threshold:
-                return 3  # Major repair
-            elif obs >= minor_repair_threshold:
-                return 2  # Minor repair
-            elif current_time % inspection_interval == 0:
-                return 1  # Inspection
-            else:
-                return 0  # Do nothing
-
-        c = 0
-        actions = []
-        for e in edge_obs:
-            edge_actions = []
-            for obs in e:
-
-                # prioritized components
-                if c in self.prioritized_components:
-                    _dict = policy_params[c]
-                    edge_actions.append(component_policy(_dict))
-
-                # unprioritized components
-                else:
-                    edge_actions.append(component_policy(policy_params))
-
-            c += 1
-            actions.append(edge_actions)
-
-        return actions
-
     def get_policy_params(self, rules):
         policy_params = {
             key: threshold
@@ -128,7 +130,7 @@ class ImportanceHeuristic(Heuristic):
             c = self.prioritized_components[i]
             policy_params.update(
                 {
-                    f"{c}": {
+                    c: {
                         f"{key}": threshold
                         for key, threshold in zip(
                             self.prioritized_rules_range.keys(), *rules[i][1:]
@@ -138,7 +140,7 @@ class ImportanceHeuristic(Heuristic):
             )
         return policy_params
 
-    def optimize_heuristics(self, num_episodes):
+    def get_policy_space(self):
         p_rules_range_dimensions = [
             len(rule) for rule in self.prioritized_rules_range.values()
         ]
@@ -150,11 +152,9 @@ class ImportanceHeuristic(Heuristic):
         print(f"Unprioritized rules range dimensions: {np_rules_range_dimensions}")
 
         # compute all possible combinations of rules
-        num_rules = (
-            self.num_prioritized
-            * math.prod(p_rules_range_dimensions)
-            * math.prod(np_rules_range_dimensions)
-        )
+        num_rules = math.prod(
+            p_rules_range_dimensions
+        ) ** self.num_prioritized * math.prod(np_rules_range_dimensions)
 
         print(f"Number of rules: {num_rules}")
 
@@ -168,40 +168,58 @@ class ImportanceHeuristic(Heuristic):
 
         all_combinations = itertools.product(comb_prio, comb_unprio)
 
-        store_policy_rewards = np.zeros((num_episodes, num_rules))
-        best_policy_idx = 0
-        best_policy_reward = -np.inf
-        best_policy_params = None
-
-        for i, rules in tqdm(enumerate(all_combinations)):
-
-            # set the rules
+        # Initialize policy space
+        policy_space = []
+        for rules in all_combinations:
             policy_params = self.get_policy_params(rules)
+            policy = ImportancePolicy(
+                policy_params, self.prioritized_components, self.component_ids
+            )
+            policy_space.append(policy)
+
+        return policy_space
+
+    def optimize_heuristics(self, num_episodes):
+
+        self.policy_space = self.get_policy_space()
+
+        store_policy_rewards = np.zeros((num_episodes, len(self.policy_space)))
+        best_policy_reward = -np.inf
+
+        print("Optimizing heuristics...")
+
+        for i, policy in tqdm(enumerate(self.policy_space)):
 
             # parallel evaluation
             evals = parallel_rollout(
-                self.env, self.policy, self.get_rollout, num_episodes, policy_params
+                self.env,
+                policy,
+                self.get_rollout,
+                num_episodes,
             )
 
             # check if the policy is the best
             if evals.mean() > best_policy_reward:
                 best_policy_reward = evals.mean()
-                best_policy_idx = i
-                best_policy_params = policy_params
+                best_policy = policy
 
             store_policy_rewards[:, i] = evals
 
         # Find the best rules corresponding to the best policy
-        self.best_rules = best_policy_params
+        self.best_policy = best_policy
+        self.best_rules = self.best_policy.policy_params
 
-        print(f"Best rules: {self.best_rules}")
+        print(f"Best policy reward: {best_policy_reward/self.norm_constant:.3f}")
 
         return store_policy_rewards
 
     def evaluate_heuristics(self, num_episodes):
 
         best_policy_rewards = parallel_rollout(
-            self.env, self.policy, self.get_rollout, num_episodes, self.best_rules
+            self.env,
+            self.best_policy,
+            self.get_rollout,
+            num_episodes,
         )
 
         best_policy_mean = np.mean(best_policy_rewards) / self.norm_constant
@@ -218,8 +236,6 @@ class ImportanceHeuristic(Heuristic):
         print(f"Best rules: {self.best_rules}")
 
         for _ in range(num_episodes):
-            total_reward = self.get_rollout(
-                self.env, self.policy, verbose=True, policy_params=self.best_rules
-            )
+            total_reward = self.get_rollout(self.env, self.best_policy, verbose=False)
 
             print(f"Episode return: {total_reward/self.norm_constant:.3f}")

@@ -1,4 +1,4 @@
-environment_setting: "ToyExample-v2"
+environment_setting: "Cologne-v1"
 exp_name: "importance_heuristic"
 norm_constant: 1_000_000
 
