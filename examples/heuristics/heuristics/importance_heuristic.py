@@ -89,35 +89,7 @@ class ImportanceHeuristic(Heuristic):
         # list of component ids in the observation
         self.component_ids = env.segment_ids
 
-    def get_rollout(self, env, policy, verbose=False):
-        obs = env.reset()
-        done = False
-        total_reward = 0
-
-        while not done:
-            actions = policy(obs)
-
-            obs, reward, done, info = env.step(actions)
-
-            if verbose:
-                print(f"timestep: {obs['time_step']}")
-                print(f"actions: {actions}")
-                print(
-                    f"reward: {reward/self.norm_constant:.3f}, total_travel_time: {info['total_travel_time']:.3f}"
-                )
-                print(
-                    f"travel time reward: {info['reward_elements']['travel_time_reward']/self.norm_constant:.3f}, maintenance reward: {info['reward_elements']['maintenance_reward']/self.norm_constant:.3f}"
-                )
-                print(
-                    f"Remaining maintenance budget: {obs['budget_remaining']/self.norm_constant:.3f}"
-                )
-                print(f"Time until budget renewal: {obs['budget_time_until_renewal']}")
-                print("=" * 50)
-                print(f"observations: {obs['edge_observations']}")
-
-            total_reward += reward
-
-        return total_reward
+        self.best_rules = None
 
     def get_policy_params(self, rules):
         policy_params = {
