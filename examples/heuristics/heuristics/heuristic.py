@@ -16,7 +16,14 @@ def parallel_rollout(env, heuristic, rollout_method, num_episodes):
     with mp.Pool(mp.cpu_count()) as pool:
         list_func_evaluations = pool.starmap(rollout_method, iterable)
 
-    return np.hstack(list_func_evaluations)
+    rewards, infos = zip(*list_func_evaluations)
+
+    stacked_rewards = np.hstack(rewards)
+    stacked_infos = {}
+    for key in infos[0].keys():
+        stacked_infos[key] = np.hstack([info[key] for info in infos])
+    
+    return stacked_rewards, stacked_infos 
 
 
 class Heuristic:
@@ -41,6 +48,8 @@ class Heuristic:
         obs = env.reset()
         done = False
         total_reward = 0
+        total_maintenance_reward = 0
+        total_travel_time_reward = 0
 
         while not done:
             actions = policy(obs)
@@ -64,8 +73,18 @@ class Heuristic:
                 print(f"observations: {obs['edge_observations']}")
 
             total_reward += reward
+            total_maintenance_reward += info["reward_elements"]["maintenance_reward"]
+            total_travel_time_reward += info["reward_elements"]["travel_time_reward"]
+            if done:
+                total_terminal_reward = info["reward_elements"]["terminal_reward"]
 
-        return total_reward
+        info = {
+            "total_maintenance_reward": total_maintenance_reward,
+            "total_travel_time_reward": total_travel_time_reward,
+            "total_terminal_reward": total_terminal_reward,
+        }
+
+        return total_reward, info
 
     def optimize_heuristics(self, num_episodes):
         # Determine the dimensions for each rule range
@@ -98,7 +117,7 @@ class Heuristic:
             #     )
 
             # parallel evaluation
-            results = parallel_rollout(
+            results, _ = parallel_rollout(
                 self.env, self.policy, self.get_rollout, num_episodes
             )
 
@@ -132,7 +151,7 @@ class Heuristic:
         if self.rules_range is not None:
             self.rules_values = self.best_rules
         # Re-evaluate the best policy
-        best_policy_rewards = parallel_rollout(
+        best_policy_rewards, infos = parallel_rollout(
             self.env, self.policy, self.get_rollout, num_episodes
         )
 
@@ -142,6 +161,19 @@ class Heuristic:
         print(f"Best policy with evaluated reward: {best_policy_mean:.3f}")
         print(f"Standard deviation of the best policy: {best_policy_std:.3f}")
         print(f"95% Confidence interval: {confidence_interval:.3f}")
+
+        maintenance_rewards_mean = np.mean(infos["total_maintenance_reward"]) / self.norm_constant
+        travel_time_rewards_mean = np.mean(infos["total_travel_time_reward"]) / self.norm_constant
+        terminal_rewards_mean = np.mean(infos["total_terminal_reward"]) / self.norm_constant
+
+        print(f"Mean maintenance rewards: {maintenance_rewards_mean:.3f}")
+        print(f"Mean terminal rewards: {terminal_rewards_mean:.3f}")
+        print(f"Mean travel time rewards: {travel_time_rewards_mean:.3f}")
+
+        residual = maintenance_rewards_mean + terminal_rewards_mean + travel_time_rewards_mean - best_policy_mean
+        if abs(residual) > 1e-6:
+            print(f"Total mean reward: {residual:.3f}")
+
         reward_stats = [best_policy_mean, best_policy_std, confidence_interval]
         return best_policy_rewards, reward_stats
 
@@ -149,6 +181,6 @@ class Heuristic:
         if self.rules_range is not None:
             self.rules_values = self.best_rules
         for _ in range(num_episodes):
-            total_reward = self.get_rollout(self.env, self.policy, verbose=True)
+            total_reward, info = self.get_rollout(self.env, self.policy, verbose=True)
 
             print(f"Episode return: {total_reward/self.norm_constant:.3f}")

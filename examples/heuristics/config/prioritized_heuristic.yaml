@@ -1,0 +1,49 @@
+environment_setting: "Cologne-v1"
+exp_name: "prirotized_heuristic"
+norm_constant: 1_000_000
+
+episodes_optimize: 1_000
+episodes_eval: 10_000
+episodes_print: 1
+
+heuristic_category: "prioritized_heuristics"
+heuristic_class: "PrioritizedHeuristic"
+
+rules_range:
+
+  prioritized:
+    components: [45]
+    replacement_threshold:
+      min: 3
+      max: 6
+      interval: 1
+    major_repair_threshold:
+      min: 2
+      max: 6
+      interval: 1
+    minor_repair_threshold:
+      min: 1
+      max: 6
+      interval: 1
+    inspection_interval:
+      min: 1
+      max: 25
+      interval: 4
+
+  default:
+    replacement_threshold:
+      min: 5
+      max: 6
+      interval: 1
+    major_repair_threshold:
+      min: 5
+      max: 6
+      interval: 1
+    minor_repair_threshold:
+      min: 2
+      max: 4
+      interval: 1
+    inspection_interval:
+      min: 1
+      max: 51
+      interval: 5
